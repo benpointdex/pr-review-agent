@@ -17,7 +17,8 @@ spring:
     out-of-order: false  
     locations:
       - classpath:db/migration  
-
+  shell:
+    enabled: false  
 
 embabel:
   agent:

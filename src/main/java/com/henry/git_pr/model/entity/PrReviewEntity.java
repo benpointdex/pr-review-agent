@@ -2,6 +2,9 @@ package com.henry.git_pr.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -31,13 +34,16 @@ public class PrReviewEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
-    @Column(name = "security_finding", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "security_finding", columnDefinition = "jsonb")
     private String securityFinding;
 
-    @Column(name = "logic_finding", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "logic_finding", columnDefinition = "jsonb")
     private String logicFinding;
 
-    @Column(name = "coverage_finding", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "coverage_finding", columnDefinition = "jsonb")
     private String coverageFinding;
 
     @Column(name = "formatted_comment", columnDefinition = "TEXT")
