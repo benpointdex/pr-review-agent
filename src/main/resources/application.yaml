@@ -1,6 +1,9 @@
 spring:
   application:
     name: git-pr
+  
+  server:
+    port: 8080
 
   datasource:
     url: ${DB_URL} 
