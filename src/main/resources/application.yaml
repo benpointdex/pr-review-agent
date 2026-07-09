@@ -36,8 +36,8 @@ embabel:
   models:
     default-llm: gemini-2.5-flash
     llms:
-      fast: gemini-2.5-flash
-      best: gemini-2.5-pro
+      best: gemini-2.5-flash
+      fast: gemini-2.5-pro
 
 
 github:
