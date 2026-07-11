@@ -7,6 +7,7 @@ import org.kohsuke.github.*;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -134,9 +135,9 @@ public class GitHubService {
         try {
             GHContent content = repo.getFileContent(file.filename(), headSha);
 
-            // GitHub returns content base64 encoded
-            byte[] decoded = Base64.getMimeDecoder().decode(content.getContent().replace("\n", ""));
-            fullContent = new String(decoded, StandardCharsets.UTF_8);
+            try (InputStream is = content.read()) {
+                fullContent = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            }
 
             // Truncate files that are too large (e.g., over 8000 chars) to prevent hitting LLM context limits
             if (fullContent.length() > 8000) {

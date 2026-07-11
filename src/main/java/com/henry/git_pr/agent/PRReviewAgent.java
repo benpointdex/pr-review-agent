@@ -62,7 +62,7 @@ public class PRReviewAgent {
         String prompt = PromptBuilder.securityPrompt(fileContext, repoKnowledge);
 
         return ai
-                .withLlmByRole("fast")
+                .withLlmByRole("security")
                 .createObject(prompt , SecurityFinding.class);
 
     }
@@ -74,7 +74,7 @@ public class PRReviewAgent {
         log.info("ACTION: runLogicReview");
         String prompt = PromptBuilder.logicPrompt(fileContext, repoKnowledge);
         return ai
-                .withLlmByRole("fast")
+                .withLlmByRole("logic")
                 .createObject(prompt , LogicFinding.class);
 
     }
@@ -88,7 +88,7 @@ public class PRReviewAgent {
         log.info("ACTION: runCoverageCheck");
         String prompt = PromptBuilder.coveragePrompt(fileContext, repoKnowledge);
         return ai
-                .withLlmByRole("fast")
+                .withLlmByRole("coverage")
                 .createObject(prompt , CoverageFinding.class);
 
 

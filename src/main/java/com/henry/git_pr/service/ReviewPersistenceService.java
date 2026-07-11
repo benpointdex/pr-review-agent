@@ -27,7 +27,9 @@ public class ReviewPersistenceService {
             ReviewedPR result
     ) {
         try {
-            PrReviewEntity entity = new PrReviewEntity();
+            PrReviewEntity entity = prReviewRepository
+                    .findByRepoFullNameAndPrNumber(event.repoFullName(), event.prNumber())
+                    .orElseGet(PrReviewEntity::new);
             entity.setRepoFullName(event.repoFullName());
             entity.setPrNumber(event.prNumber());
             entity.setPrTitle(event.prTitle());

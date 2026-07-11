@@ -3,6 +3,7 @@ package com.henry.git_pr.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.henry.git_pr.model.domain.PullRequestEvent;
+import com.henry.git_pr.service.AgentTriggerService;
 import com.henry.git_pr.service.WebhookSignatureService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -18,58 +20,52 @@ import java.util.List;
 public class WebhookController {
 
     private final WebhookSignatureService signatureService;
+    private final AgentTriggerService     agentTriggerService; // ← uncommented
     private final ObjectMapper            objectMapper;
-    // Phase 2: private final AgentTriggerService agentTriggerService;
 
-    /**
-     * POST /webhook/github
-     *
-     * Called by: GitHub (automatically when a PR is opened/updated)
-     * Headers:   X-GitHub-Event: pull_request
-     *            X-Hub-Signature-256: sha256=<hmac>
-     * Body:      GitHub pull_request webhook payload (JSON)
-     */
     @PostMapping("/github")
-    public ResponseEntity<String> handleGitHubWebhook(
+    public ResponseEntity<?> handleGitHubWebhook(
             @RequestHeader("X-GitHub-Event")       String eventType,
             @RequestHeader("X-Hub-Signature-256")  String signature,
             @RequestBody                           String rawPayload
     ) {
         log.info("Received GitHub webhook event: {}", eventType);
 
-        // Step 1: Verify this request actually came from GitHub
         if (!signatureService.isValidSignature(rawPayload, signature)) {
             log.warn("Invalid webhook signature rejected");
             return ResponseEntity.status(401).body("Invalid signature");
         }
 
-        // Step 2: Only process pull_request events
         if (!"pull_request".equals(eventType)) {
             log.debug("Ignoring non-PR event: {}", eventType);
             return ResponseEntity.ok("Event ignored");
         }
 
-        // Step 3: Parse the payload
         try {
             JsonNode payload = objectMapper.readTree(rawPayload);
             String action    = payload.get("action").asText();
 
-            // Only trigger on "opened" (new PR) or "synchronize" (new commits pushed)
-            List<String> triggerActions = List.of("opened", "synchronize");
-            if (!triggerActions.contains(action)) {
+            if (!List.of("opened", "synchronize").contains(action)) {
                 log.debug("Ignoring PR action: {}", action);
                 return ResponseEntity.ok("PR action ignored: " + action);
             }
 
-            // Step 4: Build our domain object from the GitHub payload
             PullRequestEvent event = parsePullRequestEvent(payload, action);
 
             log.info("PR event parsed: PR #{} in {} by {} (action: {})",
                     event.prNumber(), event.repoFullName(), event.authorLogin(), action);
 
-            // Phase 2: agentTriggerService.triggerReviewAsync(event);
+            // ← actual trigger now wired in
+            String processId = agentTriggerService.triggerReview(event);
 
-            return ResponseEntity.ok("Review triggered for PR #" + event.prNumber());
+            // Return 202 Accepted + process ID immediately
+            // GitHub doesn't wait for the review to finish
+            return ResponseEntity.accepted().body(Map.of(
+                    "message",   "Review triggered for PR #" + event.prNumber(),
+                    "processId", processId,
+                    "statusUrl", "/api/v1/process/" + processId,
+                    "sseUrl",    "/events/process/" + processId
+            ));
 
         } catch (Exception e) {
             log.error("Error processing webhook payload", e);
